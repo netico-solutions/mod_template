@@ -21,5 +21,21 @@
 #ifndef KMLOG_H
 #define KMLOG_H
 
+#define KML_OFF                 0
+
+#define KML_ERR                 1
+#define KML_WARN                2
+#define KML_INFO                3
+#define KML_DBG                 4
+
+#define KML_GLOBAL_LEVEL        KML_DBG
+
+#define KMLOG(level, ...)                                                       \
+    do {                                                                        \
+        if (level < KML_GLOBAL_LEVEL) {                                         \
+            printk(## __VA_ARGS__);                                             \
+        }                                                                       \
+    } while (0)
+
 #endif /* KMLOG_H */
 
