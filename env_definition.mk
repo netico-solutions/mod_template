@@ -1,2 +1,0 @@
-
-LINUX_KERNEL_PATH=
