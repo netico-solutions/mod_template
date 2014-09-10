@@ -21,4 +21,6 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#define ERR_NONE                        0
+
 #endif /* MAIN_H */

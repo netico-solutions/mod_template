@@ -19,13 +19,13 @@
  */
 
 #include <linux/module.h>
-#include <linux/kernel.>
+#include <linux/kernel.h>
 #include <linux/init.h>
 
 #include "plat/compiler.h"
 
 #include "main/main.h"
-#include "main/log.h"
+#include "main/kmlog.h"
 #include "main/debug.h"
 
 #define THIS_MODULE_AUTHOR              "Nenad Radulovic <nenad.b.radulovic@gmail.com"

@@ -33,7 +33,7 @@
 #define KMLOG(level, ...)                                                       \
     do {                                                                        \
         if (level < KML_GLOBAL_LEVEL) {                                         \
-            printk(## __VA_ARGS__);                                             \
+            printk(# __VA_ARGS__);                                             \
         }                                                                       \
     } while (0)
 
