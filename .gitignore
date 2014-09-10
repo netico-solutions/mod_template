@@ -21,3 +21,15 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Kernel objects
+*.o.cmd
+*.ko.cmd
+*.mod.o.cmd
+modules.order
+Module.symvers
+*.mod.c
+.tmp_versions/
+
+# Common files
+*~
