@@ -28,9 +28,9 @@
 
 #include "plat/compiler.h"
 
-#include "main/main.h"
-#include "main/kmlog.h"
-#include "main/debug.h"
+#include "drv/main.h"
+#include "drv/kmlog.h"
+#include "drv/debug.h"
 
 #define THIS_MODULE_NAME                "xmodule"
 #define THIS_MODULE_AUTHOR              "Nenad Radulovic <nenad.b.radulovic@gmail.com"
@@ -40,12 +40,12 @@ struct xmodule_proc
 {
     int                 pid;
     uint32_t            id;
-}
+};
 
 /*-- Driver file operations --------------------------------------------------*/
 static ssize_t xmodule_read(struct file *, char __user *, size_t, loff_t *);
 static ssize_t xmodule_write(struct file *, const char __user *, size_t, loff_t *);
-static long    xmodule_ioctl(struct file * unsigned int, unsigned long);
+static long    xmodule_ioctl(struct file *, unsigned int, unsigned long);
 static int     xmodule_mmap(struct file *, struct vm_area_struct *);
 static int     xmodule_open(struct inode *, struct file *);
 static int     xmodule_flush(struct file *, fl_owner_t id);
@@ -61,14 +61,14 @@ static struct file_operations g_xmodule_fops =
     .open               = xmodule_open,
     .flush              = xmodule_flush,
     .release            = xmodule_release
-}
+};
 
 static struct miscdevice g_xmodule_miscdev =
 {
     .minor              = MISC_DYNAMIC_MINOR,
 	.name               = THIS_MODULE_NAME,
 	.fops               = &g_xmodule_fops
-}
+};
 
 static DEFINE_MUTEX(g_xmodule_lock);
 
@@ -117,9 +117,23 @@ static int     xmodule_release(struct inode *, struct file *);
 
 static int __init module_initialize(void)
 {
+    int                 retval;
+    
     KML_NOTICE("Loading module\n");
+    KML_DBG("registering device driver\n")
+    retval = misc_register(&g_xmodule_miscdev);
+    
+    if (retval < 0) {
+        goto ERR_MISC_REGISTER;
+    }
+    
     
     return (ERR_NONE);
+    
+ERR_MISC_REGISTER:
+    KML_ERR("cannot register device driver: %d\n", retval);
+    
+    return (retval);
 }
 
 static void __exit module_terminate(void)
