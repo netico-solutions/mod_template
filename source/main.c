@@ -25,9 +25,13 @@
 #include <linux/fs.h>
 #include <linux/mutex.h>
 #include <linux/mm.h>
+#include <linux/slab.h>
+#include <linux/sched.h>
+#include <linux/uaccess.h>
 
 #include "plat/compiler.h"
 
+#include "xmodule_ioctl.h"
 #include "drv/main.h"
 #include "drv/kmlog.h"
 #include "drv/debug.h"
@@ -35,6 +39,10 @@
 #define THIS_MODULE_NAME                "xmodule"
 #define THIS_MODULE_AUTHOR              "Nenad Radulovic <nenad.b.radulovic@gmail.com"
 #define THIS_MODULE_DESCRIPTION         "Generic Lunux Kernel template"
+#define THIS_MODULE_VERSION_MAJOR       "1"
+#define THIS_MODULE_VERSION_MINOR       "0"
+
+#define THIS_MODULE_VERSION             THIS_MODULE_VERSION_MAJOR "." THIS_MODULE_VERSION_MINOR
 
 struct xmodule_proc 
 {
@@ -63,65 +71,94 @@ static struct file_operations g_xmodule_fops =
     .release            = xmodule_release
 };
 
-static struct miscdevice g_xmodule_miscdev =
+static struct miscdevice g_xmodule_dev =
 {
     .minor              = MISC_DYNAMIC_MINOR,
 	.name               = THIS_MODULE_NAME,
 	.fops               = &g_xmodule_fops
 };
 
-static DEFINE_MUTEX(g_xmodule_lock);
+static DEFINE_MUTEX(g_xmodule_global_lock);
 
-static ssize_t xmodule_read(struct file *, char __user *, size_t, loff_t *);
-static ssize_t xmodule_write(struct file *, const char __user *, size_t, loff_t *)
+static ssize_t xmodule_read(struct file * fd, char __user * user, size_t size, 
+        loff_t * offset)
 {
-
+    KML_INFO("read\n");
+    
+    return (0);
 }
 
-static long    xmodule_ioctl(struct file * file, unsigned int cmd, unsigned long arg)
+static ssize_t xmodule_write(struct file * fd, const char __user * user, 
+        size_t size, loff_t * offset)
 {
+    KML_INFO("write\n");
+    return (0);
+}
+
+static long xmodule_ioctl(struct file * file, unsigned int cmd, 
+        unsigned long arg)
+{
+    long                        retval;
+
     KML_INFO("ioctl\n");
+
+    switch (cmd) {
+        case XMODULE_HARD_RESET : {
+            retval = 0;
+            break;
+        }
+        case XMODULE_VERSION : {
+            retval = 0;
+            copy_to_user((void __user *)arg, THIS_MODULE_VERSION, 
+                sizeof(THIS_MODULE_VERSION));
+            break;
+        }
+        default : {
+            retval = EINVAL;
+            break;
+        }
+    };
+    
+    return (retval);
 }
 
 static int xmodule_mmap(struct file * file, struct vm_area_struct * vma)
 {
     KML_INFO("mmap\n");
-    KML_DBG("mmap details: pid: %d vma: %lx-%lx (%ld K) vma %lx pagep %lx\n",
-		proc->pid, vma->vm_start, vma->vm_end,
-		(vma->vm_end - vma->vm_start) / SZ_1K, vma->vm_flags,
-		(unsigned long)pgprot_val(vma->vm_page_prot);
 		
 	return (0);
 }
 
 static int xmodule_open(struct inode * inode, struct file * file)
 {
-    struct xmodule_proc *                   proc;
-    
-    KML_INFO("open\n");
-    KML_DBG("open details: %d:%d\n", current->group_leader->pid, current->pid);
-    
-    proc = kzalloc(sizeof(*proc), GFP_KERNEL);
-    
-    if (proc == NULL) {
-        return (-ENOMEM);
-    }
-    proc->pid = current->group_leader->pid;
-    file->private_data = proc;
+    KML_INFO("open: %d:%d\n", current->group_leader->pid, current->pid);
+
+     
     
     return (0);
 }
 
-static int     xmodule_flush(struct file *, fl_owner_t id);
-static int     xmodule_release(struct inode *, struct file *);
+static int     xmodule_flush(struct file * fd, fl_owner_t id)
+{
+    KML_INFO("flush\n");
+    
+    return (0);
+}
+
+static int     xmodule_release(struct inode * inode, struct file * fd)
+{
+    KML_INFO("release\n");
+    
+    return (0);
+}
 
 static int __init module_initialize(void)
 {
     int                 retval;
     
     KML_NOTICE("Loading module\n");
-    KML_DBG("registering device driver\n")
-    retval = misc_register(&g_xmodule_miscdev);
+    KML_DBG("registering device driver\n");
+    retval = misc_register(&g_xmodule_dev);
     
     if (retval < 0) {
         goto ERR_MISC_REGISTER;
@@ -139,6 +176,8 @@ ERR_MISC_REGISTER:
 static void __exit module_terminate(void)
 {
     KML_NOTICE("Unloading module\n");
+    KML_INFO("deregistering device driver\n");
+    misc_deregister(&g_xmodule_dev);
 }
 
 module_init(module_initialize);

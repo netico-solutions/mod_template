@@ -36,35 +36,35 @@
 
 #if (KML_GLOBAL_LEVEL >= KML_INFO_LEVEL)
 #define KML_DBG(text, ...)                                                      \
-    printk(KERN_DEBUG CONFIG_XMODULE_NAME ": " text, # __VA_ARGS__)
+    printk(KERN_DEBUG CONFIG_XMODULE_NAME ": " text, ## __VA_ARGS__)
 #else
 #define KML_DBG()                           (void)0
 #endif
 
 #if (KML_GLOBAL_LEVEL >= KML_DBG_LEVEL)
 #define KML_INFO(text, ...)                                                     \
-    printk(KERN_INFO CONFIG_XMODULE_NAME ": " text, # __VA_ARGS__)
+    printk(KERN_INFO CONFIG_XMODULE_NAME ": " text, ## __VA_ARGS__)
 #else
 #define KML_INFO()                          (void)0
 #endif
 
 #if (KML_GLOBAL_LEVEL >= KML_NOTICE_LEVEL)
 #define KML_NOTICE(text, ...)                                                   \
-    printk(KERN_NOTICE CONFIG_XMODULE_NAME ": " text, # __VA_ARGS__)
+    printk(KERN_NOTICE CONFIG_XMODULE_NAME ": " text, ## __VA_ARGS__)
 #else
 #define KML_NOTICE()                        (void)0
 #endif
 
 #if (KML_GLOBAL_LEVEL >= KML_WARN_LEVEL)
 #define KML_WARN(text, ...)                                                     \
-    printk(KERN_WARNING CONFIG_XMODULE_NAME ": " text, # __VA_ARGS__)
+    printk(KERN_WARNING CONFIG_XMODULE_NAME ": " text, ## __VA_ARGS__)
 #else
 #define KML_WARN()                          (void)0
 #endif
 
 #if (KML_GLOBAL_LEVEL >= KML_ERR_LEVEL)
 #define KML_ERR(text, ...)                                                      \
-    printk(KERN_ERR CONFIG_XMODULE_NAME ": " text, # __VA_ARGS__)
+    printk(KERN_ERR CONFIG_XMODULE_NAME ": " text, ## __VA_ARGS__)
 #else
 #define KML_ERR()                           (void)0
 #endif

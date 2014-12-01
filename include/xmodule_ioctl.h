@@ -27,6 +27,8 @@
  *              module can be unloaded should something go wrong with the 
  *              counter.
  */
-#define XMODULE_HART_RESET                  _IO(XMODULE_IOC_MAGIC, 200)
+#define XMODULE_HARD_RESET                  _IO(XMODULE_IOC_MAGIC, 200)
+
+#define XMODULE_VERSION                     _IO(XMODULE_IOC_MAGIC, 201)
 
 #endif /* XMODULE_IOCTL_H */

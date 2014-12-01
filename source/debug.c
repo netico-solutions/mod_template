@@ -18,4 +18,5 @@
  * along with module_template. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "main/debug.h"
+#include "drv/debug.h"
+
