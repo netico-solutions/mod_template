@@ -3,8 +3,8 @@
 # --  Kernel module specifics  ----------------------------------------------- #
 
 # HW Agnostic objects
-KM_BASE_OBJS        := src/main.o src/debug.o
-KM_BASE_INC         := inc
+KM_BASE_OBJS        := source/main.o source/debug.o
+KM_BASE_INC         := include
 
 # Port objects
 KM_PORT_ARCH        := arm

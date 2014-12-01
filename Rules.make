@@ -1,6 +1,9 @@
 #platform
 KM_PLATFORM=var-som-am33
 
+#Working root 
+KM_WORK_ROOT=/home/nenad/workspace/extmod
+
 #SDK root
 KM_SDK_ROOT=/opt/ti-sdk-am335x-evm-07.00.00.00
 
@@ -17,6 +20,6 @@ KM_TOOLCHAIN_PATH=$(KM_SDK_ROOT)/linux-devkit/sysroots/i686-arago-linux/usr/bin
 KM_TOOLCHAIN=$(KM_TOOLCHAIN_PATH)/$(KM_TOOLCHAIN_PREFIX)
 
 #Linux kernel sources
-KM_LINUX_SRC=$(KM_SDK_ROOT)/board-support/VAR-SOM-AM33-SDK7-Kernel
+KM_LINUX_SRC=$(KM_WORK_ROOT)/kernel
 
 
