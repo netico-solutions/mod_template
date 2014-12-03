@@ -29,6 +29,20 @@
  */
 #define XMODULE_HARD_RESET                  _IO(XMODULE_IOC_MAGIC, 200)
 
+/* @brief       Get the module version information
+ */
 #define XMODULE_VERSION                     _IO(XMODULE_IOC_MAGIC, 201)
+
+/* @brief       Get the bit-mask of supported channels
+ */
+#define XMODULE_CHANNELS                    _IO(XMODULE_IOC_MAGIC, 100)
+
+/* @brief       Bitwise OR mask of channels to sample
+ */
+#define XMODULE_ENABLE_CHANNELS             _IO(XMODULE_IOC_MAGIC, 101)
+
+/* @brrief      Bitwise AND mask of channels to sample
+ */
+#define XMODULE_DISABLE_CHANNELS            _IO(XMODULE_IOC_MAGIC, 102)
 
 #endif /* XMODULE_IOCTL_H */
