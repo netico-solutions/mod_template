@@ -32,23 +32,39 @@
 #include "plat/compiler.h"
 
 #include "xmodule_ioctl.h"
+#include "drv/channel_context.h"
 #include "drv/main.h"
 #include "drv/kmlog.h"
 #include "drv/debug.h"
+#include "drv/port.h"
 
 #define THIS_MODULE_NAME                "xmodule"
 #define THIS_MODULE_AUTHOR              "Nenad Radulovic <nenad.b.radulovic@gmail.com"
-#define THIS_MODULE_DESCRIPTION         "Generic Lunux Kernel template"
+#define THIS_MODULE_DESCRIPTION         "Generic Linux Kernel template"
 #define THIS_MODULE_VERSION_MAJOR       "1"
 #define THIS_MODULE_VERSION_MINOR       "0"
 
 #define THIS_MODULE_VERSION             THIS_MODULE_VERSION_MAJOR "." THIS_MODULE_VERSION_MINOR
 
-struct xmodule_proc 
+enum xmodule_state
 {
-    int                 pid;
-    uint32_t            id;
+    XMODULE_STATE_INIT,
+    XMODULE_STATE_CONTEXT_ALLOC,
+    XMODULE_STATE_CONTEXT_INIT,
+    XMODULE_STATE_MISCDEV_REGISTER,
+    XMODULE_STATE_MODULE_INITIALIZED
 };
+
+struct xmodule_context
+{
+    enum xmodule_state          state;
+    uint32_t                    enabled_chn_mask;
+    uint32_t                    active_chn_mask;
+    struct mutex                lock;
+    struct channel_context *    channel;
+};
+
+static struct xmodule_context   g_context;
 
 /*-- Driver file operations --------------------------------------------------*/
 static ssize_t xmodule_read(struct file *, char __user *, size_t, loff_t *);
@@ -74,8 +90,8 @@ static struct file_operations g_xmodule_fops =
 static struct miscdevice g_xmodule_dev =
 {
     .minor              = MISC_DYNAMIC_MINOR,
-	.name               = THIS_MODULE_NAME,
-	.fops               = &g_xmodule_fops
+    .name               = THIS_MODULE_NAME,
+    .fops               = &g_xmodule_fops
 };
 
 static DEFINE_MUTEX(g_xmodule_global_lock);
@@ -92,6 +108,7 @@ static ssize_t xmodule_write(struct file * fd, const char __user * user,
         size_t size, loff_t * offset)
 {
     KML_INFO("write\n");
+    
     return (0);
 }
 
@@ -108,9 +125,12 @@ static long xmodule_ioctl(struct file * file, unsigned int cmd,
             break;
         }
         case XMODULE_VERSION : {
-            retval = 0;
-            copy_to_user((void __user *)arg, THIS_MODULE_VERSION, 
+            retval = copy_to_user((void __user *)arg, THIS_MODULE_VERSION, 
                 sizeof(THIS_MODULE_VERSION));
+                
+            if (retval) {
+                retval = EAGAIN;
+            }
             break;
         }
         default : {
@@ -125,31 +145,134 @@ static long xmodule_ioctl(struct file * file, unsigned int cmd,
 static int xmodule_mmap(struct file * file, struct vm_area_struct * vma)
 {
     KML_INFO("mmap\n");
-		
-	return (0);
-}
 
-static int xmodule_open(struct inode * inode, struct file * file)
-{
-    KML_INFO("open: %d:%d\n", current->group_leader->pid, current->pid);
-
-     
-    
     return (0);
 }
 
-static int     xmodule_flush(struct file * fd, fl_owner_t id)
+static int xmodule_open(struct inode * inode, struct file * fd)
+{
+    KML_INFO("open: %d:%d\n", current->group_leader->pid, current->pid);
+
+    return (0);
+}
+
+static int xmodule_flush(struct file * fd, fl_owner_t id)
 {
     KML_INFO("flush\n");
     
     return (0);
 }
 
-static int     xmodule_release(struct inode * inode, struct file * fd)
+static int xmodule_release(struct inode * inode, struct file * fd)
 {
     KML_INFO("release\n");
     
     return (0);
+}
+
+static int xmodule_init_sm(void)
+{
+    int                 retval;
+    int                 channels;
+    int                 channel_no;
+    
+    /*-- INIT ----------------------------------------------------------------*/
+    g_context.state = XMODULE_STATE_INIT;
+    mutex_init(&g_context.lock);
+    
+    /*-- CONTEXT_ALLOC -------------------------------------------------------*/
+    g_context.state   = XMODULE_STATE_CONTEXT_ALLOC;
+    KML_DBG("channel context alloc\n");
+    
+    channels          = port_channels();
+    g_context.channel = kmalloc(sizeof(struct channel_context [channels]), 
+        GFP_KERNEL);
+        
+    if (g_context.channel == NULL) {
+        retval = ENOMEM;
+        KML_ERR("cannot allocate channels context, err: %d\n", retval);
+        
+        return (retval);
+    }
+    
+    /*-- CONTEXT_INIT --------------------------------------------------------*/
+    g_context.state = XMODULE_STATE_CONTEXT_INIT;
+    KML_DBG("channel context init\n");
+
+    for (channel_no = 0, g_context.enabled_chn_mask = 0; channel_no < channels; 
+        channel_no++) {
+        retval = channel_init(&g_context.channel[channel_no]);
+        
+        if (retval == 0) {
+            g_context.enabled_chn_mask |= (0x1u << channel_no);
+        }
+    }
+    
+    if (g_context.enabled_chn_mask != port_channels_mask()) {
+        retval = ENOMEM;
+        KML_ERR("cannot init channels context, err: %d\n", retval);
+        
+        return (retval);
+    }
+    
+    /*-- MISCDEV_REGISTER ----------------------------------------------------*/
+    g_context.state = XMODULE_STATE_MISCDEV_REGISTER;
+    KML_DBG("registering device driver\n");
+    retval = misc_register(&g_xmodule_dev);
+    
+    if (retval < 0) {
+        KML_ERR("cannot register device driver, err: %d\n", retval);
+        
+        return (retval);
+    }
+    g_context.state = XMODULE_STATE_MODULE_INITIALIZED;
+    
+    return (0);
+}
+
+static int xmodule_term_sm(void)
+{
+    int                         retval;
+    
+    switch (g_context.state) {
+        case XMODULE_STATE_MODULE_INITIALIZED: {
+            KML_DBG("deregistering device driver\n");
+            misc_deregister(&g_xmodule_dev);
+            /* fall down */
+        }
+        case XMODULE_STATE_MISCDEV_REGISTER: {
+            /* fall down */
+        }
+        case XMODULE_STATE_CONTEXT_INIT: {
+            uint32_t            channel_no;
+            uint32_t            channels;
+            
+            KML_DBG("terminating channel context\n");
+            
+            channels = port_channels();
+            
+            for (channel_no = 0; channel_no < channels; channel_no++) {
+                if (g_context.enabled_chn_mask & (0x1u << channel_no)) {
+                    channel_term(&g_context.channel[channel_no]);
+                }
+            }
+            KML_DBG("release channel context\n");
+            kfree(g_context.channel);
+            /* fall down */
+        }             
+        case XMODULE_STATE_CONTEXT_ALLOC: {
+            /* fall down */
+        }
+        case XMODULE_STATE_INIT: {
+            /* fall down */
+            break;
+        }
+        default : {
+            return (0);
+        }
+    }
+    
+    return (retval);
 }
 
 static int __init module_initialize(void)
@@ -157,18 +280,7 @@ static int __init module_initialize(void)
     int                 retval;
     
     KML_NOTICE("Loading module\n");
-    KML_DBG("registering device driver\n");
-    retval = misc_register(&g_xmodule_dev);
-    
-    if (retval < 0) {
-        goto ERR_MISC_REGISTER;
-    }
-    
-    
-    return (ERR_NONE);
-    
-ERR_MISC_REGISTER:
-    KML_ERR("cannot register device driver: %d\n", retval);
+    retval = xmodule_init_sm();
     
     return (retval);
 }
@@ -176,8 +288,8 @@ ERR_MISC_REGISTER:
 static void __exit module_terminate(void)
 {
     KML_NOTICE("Unloading module\n");
-    KML_INFO("deregistering device driver\n");
-    misc_deregister(&g_xmodule_dev);
+    
+    xmodule_term_sm();
 }
 
 module_init(module_initialize);
