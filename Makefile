@@ -37,7 +37,7 @@ KM_JOBS=4
 # --  Kernel module specifics  ----------------------------------------------- #
 
 # HW Agnostic objects
-KM_BASE_OBJS        := source/main.o source/debug.o
+KM_BASE_OBJS        := source/main.o source/debug.o source/channel_context.o
 KM_BASE_INC         := include
 
 # Port objects
