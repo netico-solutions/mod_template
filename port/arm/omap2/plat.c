@@ -18,7 +18,23 @@
  * along with module_template. If not, see <http://www.gnu.org/licenses/>.
  */
 
-void some(void) 
+#include "drv/port.h"
+
+#define PORT_CHANNELS                   4
+#define PORT_CHANNELS_MASK              0xfu
+
+void port_init(void) 
 {
 
 }
+
+uint32_t port_channels(void)
+{
+    return (PORT_CHANNELS);
+}
+
+uint32_t port_channels_mask(void)
+{
+    return (PORT_CHANNELS_MASK);
+}
+
