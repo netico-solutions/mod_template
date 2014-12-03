@@ -75,6 +75,10 @@ static int     xmodule_open(struct inode *, struct file *);
 static int     xmodule_flush(struct file *, fl_owner_t id);
 static int     xmodule_release(struct inode *, struct file *);
 
+/*-- Driver state machines ---------------------------------------------------*/
+static int xmodule_init_sm(void);
+static void xmodule_term_sm(void);
+
 static struct file_operations g_xmodule_fops =
 {
     .owner              = THIS_MODULE,
@@ -230,10 +234,8 @@ static int xmodule_init_sm(void)
     return (0);
 }
 
-static int xmodule_term_sm(void)
+static void xmodule_term_sm(void)
 {
-    int                         retval;
-    
     switch (g_context.state) {
         case XMODULE_STATE_MODULE_INITIALIZED: {
             KML_DBG("deregistering device driver\n");
@@ -268,11 +270,8 @@ static int xmodule_term_sm(void)
             break;
         }
         default : {
-            return (0);
         }
     }
-    
-    return (retval);
 }
 
 static int __init module_initialize(void)
