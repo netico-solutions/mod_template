@@ -68,7 +68,8 @@ static struct xmodule_context   g_context;
 
 /*-- Driver file operations --------------------------------------------------*/
 static ssize_t xmodule_read(struct file *, char __user *, size_t, loff_t *);
-static ssize_t xmodule_write(struct file *, const char __user *, size_t, loff_t *);
+static ssize_t xmodule_write(struct file *, const char __user *, size_t, 
+    loff_t *);
 static long    xmodule_ioctl(struct file *, unsigned int, unsigned long);
 static int     xmodule_mmap(struct file *, struct vm_area_struct *);
 static int     xmodule_open(struct inode *, struct file *);
@@ -136,6 +137,11 @@ static long xmodule_ioctl(struct file * file, unsigned int cmd,
                 retval = EAGAIN;
             }
             break;
+        }
+        case XMODULE_ENABLE_CHANNELS: {
+            mutex_lock(&g_context.lock);
+            g_context.active_chn_mask |= (g_context.enabled_chn_mask & arg);
+            mutex_unlock(&g_context.lock);
         }
         default : {
             retval = EINVAL;

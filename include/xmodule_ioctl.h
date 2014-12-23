@@ -31,11 +31,11 @@
 
 /* @brief       Get the module version information
  */
-#define XMODULE_VERSION                     _IO(XMODULE_IOC_MAGIC, 201)
+#define XMODULE_VERSION                     _IOWR(XMODULE_IOC_MAGIC, 201)
 
 /* @brief       Get the bit-mask of supported channels
  */
-#define XMODULE_CHANNELS                    _IO(XMODULE_IOC_MAGIC, 100)
+#define XMODULE_CHANNELS                    _IOWR(XMODULE_IOC_MAGIC, 100)
 
 /* @brief       Bitwise OR mask of channels to sample
  */
